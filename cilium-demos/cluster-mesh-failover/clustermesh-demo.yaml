@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pacman-global
+  labels:
+    app.kubernetes.io/name: pacman
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: pacman-cilium-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pacman
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pacman
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: pacman-cilium-demo
+    spec:
+      containers:
+        - name: pacman
+          image: docker.io/saintdle/pacman@sha256:592740129bce7530a347146b86647f8b516df3c19105aa4c2fe40b878840fccf
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: APP_VARIANT
+              value: clustermesh-global
+            - name: DB_TYPE
+              value: memory
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pacman-global
+  annotations:
+    service.cilium.io/global: "true"
+    service.cilium.io/shared: "true"
+spec:
+  selector:
+    app.kubernetes.io/name: pacman
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -1,0 +1,34 @@
+# Pac-Man RBAC. The legacy PodSecurityPolicy (policy/v1beta1) was removed
+# in Kubernetes 1.25; pod-level security is now enforced by Pod Security
+# Standards labels on the namespace (see pacman-install.sh).
+#
+# This template is rendered by pacman-install.sh via `envsubst` so the
+# ClusterRoleBinding subject namespace matches $NAMESPACE.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pacman-clusterrole
+  labels:
+    app.kubernetes.io/name: pacman
+    app.kubernetes.io/part-of: pacman
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pacman-clusterrole-${NAMESPACE}
+  labels:
+    app.kubernetes.io/name: pacman
+    app.kubernetes.io/part-of: pacman
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pacman-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ${NAMESPACE}
